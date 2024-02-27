@@ -6,6 +6,6 @@ export default {
   SERVER_ERROR: 500,
 };
 
-const DB_NAME = "backend";
+const DB_NAME = "expressApi";
 
 export { DB_NAME };
