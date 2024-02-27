@@ -1,6 +1,7 @@
 import expressAsyncHandler from "express-async-handler";
 import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 // @desc register a user
 // route /api/users/register
 // access public
@@ -44,7 +45,33 @@ const registerUser = expressAsyncHandler(async (req, res) => {
 // access private
 
 const loginUser = expressAsyncHandler(async (req, res) => {
-  res.status(200).json({ message: "login register" });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400);
+    throw new Error("All fields are mendatory");
+  }
+
+  const user = await User.findOne({ email });
+  if (user && bcrypt.compare(password, user.password)) {
+    const accessToken = jwt.sign(
+      {
+        user: {
+          username: user.username,
+          email: user.email,
+          id: user.id,
+        },
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      }
+    );
+
+    res.status(200).json({ accessToken });
+  } else {
+    res.status(401);
+    throw new Error("Password or Email is incorrect");
+  }
 });
 
 // @desc current user info
@@ -52,7 +79,7 @@ const loginUser = expressAsyncHandler(async (req, res) => {
 // access public
 
 const currentUser = expressAsyncHandler(async (req, res) => {
-  res.status(200).json({ message: "current user info" });
+  res.json(req.user);
 });
 
 export { registerUser, loginUser, currentUser };

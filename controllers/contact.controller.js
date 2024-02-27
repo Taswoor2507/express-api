@@ -5,10 +5,8 @@ import Contact from "../models/contacts.model.js";
 // route /api/contacts
 // access public
 
-import errorHandler from "../middleware/errorHandler.js";
-
 const getContacts = expressAsyncHandler(async (req, res) => {
-  const contact = await Contact.find();
+  const contact = await Contact.find({ user_id: req.user.id });
   res.status(200).json(contact);
 });
 
@@ -39,6 +37,7 @@ const createContact = expressAsyncHandler(async (req, res) => {
     name,
     email,
     phone,
+    user_id: req.user.id,
   });
   console.log(req.body);
   res.status(201).json(contact);
@@ -53,6 +52,11 @@ const updateContact = expressAsyncHandler(async (req, res) => {
   if (!contact) {
     res.status(404);
     throw new Error("Contact not found!!");
+  }
+
+  if (contact.user_id.toString() != req.user.id) {
+    res.status(403);
+    throw new Error("Unable to update other user data for this login in first");
   }
 
   const updatedContact = await Contact.findByIdAndUpdate(
@@ -71,6 +75,11 @@ const deleteContact = expressAsyncHandler(async (req, res) => {
   if (!contact) {
     res.status(404);
     throw new Error("Contact not found!!");
+  }
+
+  if (contact.user_id.toString() != req.user.id) {
+    res.status(403);
+    throw new Error("Unable to delete other user data for this login in first");
   }
 
   await Contact.deleteOne({ _id: req.params.id });
